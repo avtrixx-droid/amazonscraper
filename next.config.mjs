@@ -2,6 +2,9 @@ import { imageHosts } from './image-hosts.config.mjs';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   productionBrowserSourceMaps: true,
   distDir: process.env.DIST_DIR || '.next',
 
