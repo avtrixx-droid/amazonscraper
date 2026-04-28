@@ -47,7 +47,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
     "serve": "next start",
     "type-check": "tsc --noEmit",
-    "playwright:install": "playwright install chromium"
+    "playwright:install": "npx playwright install chromium"
   },
   "dependencies": {
     "@dhiwise/component-tagger": "^1.0.15",
