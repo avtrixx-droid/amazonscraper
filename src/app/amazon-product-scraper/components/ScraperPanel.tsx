@@ -76,7 +76,7 @@ function isFastDelivery(deliveryEstimate: string | null): boolean {
 }
 
 function downloadCSV(rows: RowResult[]) {
-  const headers = ['asin', 'pincode', 'title', 'price', 'rating', 'review_count', 'delivery', 'availability', 'seller'];
+  const headers = ['asin', 'pincode', 'title', 'price', 'rating', 'review_count', 'delivery_date', 'shipping', 'availability', 'seller'];
   const csvRows = [headers.join(',')];
   for (const row of rows) {
     if (row.status !== 'done' || !row.result) continue;
@@ -85,6 +85,7 @@ function downloadCSV(rows: RowResult[]) {
       if (!v) return '';
       return `"${String(v).replace(/"/g, '""')}"`;
     };
+    const shippingType = d.primeAvailable ? 'Prime' : (d.deliveryEstimate?.toLowerCase().includes('free') ? 'Free' : 'Paid');
     csvRows.push([
       escape(row.asin),
       escape(row.pincode),
@@ -92,7 +93,8 @@ function downloadCSV(rows: RowResult[]) {
       escape(d.price),
       escape(d.rating),
       escape(d.reviewCount),
-      escape(d.deliveryEstimate),
+      escape(d.deliveryDate ?? d.deliveryEstimate),
+      escape(shippingType),
       escape(d.availability),
       escape(d.seller),
     ].join(','));
@@ -255,21 +257,6 @@ export default function ScraperPanel() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-100 tracking-tight">Amazon Product Scraper</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Extract price, availability, delivery &amp; rating from{' '}
-            <span className="text-orange-400 font-mono">amazon.in</span> using Playwright.
-          </p>
-        </div>
-        <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-500 flex-shrink-0">
-          <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-700/50">Playwright</span>
-          <span className="px-2 py-1 rounded bg-slate-800/60 border border-slate-700/50">amazon.in</span>
-        </div>
-      </div>
-
       {/* Input Section */}
       <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-5 space-y-4">
         <div className="flex items-center justify-between">
@@ -426,7 +413,8 @@ export default function ScraperPanel() {
                   <th className="text-left px-4 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider">Price</th>
                   <th className="text-left px-4 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider">Rating</th>
                   <th className="text-left px-4 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider">Reviews</th>
-                  <th className="text-left px-4 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider">Delivery</th>
+                  <th className="text-left px-4 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider">Delivery Date</th>
+                  <th className="text-left px-4 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider">Shipping</th>
                   <th className="text-left px-4 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider">Availability</th>
                   <th className="text-left px-4 py-2.5 text-[11px] font-medium text-slate-500 uppercase tracking-wider">Seller</th>
                 </tr>
@@ -491,6 +479,10 @@ function ResultRow({
     ? 'bg-red-500/5 hover:bg-red-500/8'
     : isLowestPrice
     ? 'bg-emerald-500/5 hover:bg-emerald-500/8' :'hover:bg-slate-800/30';
+
+  const shippingType = d?.primeAvailable
+    ? 'prime' : d?.deliveryEstimate?.toLowerCase().includes('free')
+    ? 'free' :'paid';
 
   return (
     <>
@@ -592,8 +584,8 @@ function ResultRow({
           ) : <span className="text-slate-600 text-xs">—</span>}
         </td>
 
-        {/* Delivery */}
-        <td className="px-4 py-3 max-w-[160px]">
+        {/* Delivery Date */}
+        <td className="px-4 py-3 max-w-[140px]">
           {row.status === 'done' ? (
             <div className="flex items-start gap-1.5">
               {fast && (
@@ -602,11 +594,20 @@ function ResultRow({
                 </svg>
               )}
               <span className={`text-xs leading-snug ${fast ? 'text-blue-400 font-medium' : 'text-slate-400'}`}>
-                {d?.deliveryEstimate ?? '—'}
+                {d?.deliveryDate ?? d?.deliveryEstimate ?? '—'}
               </span>
             </div>
           ) : row.status === 'loading' || row.status === 'pending' ? (
             <div className="h-3.5 w-24 rounded bg-slate-800 shimmer" />
+          ) : <span className="text-slate-600 text-xs">—</span>}
+        </td>
+
+        {/* Shipping */}
+        <td className="px-4 py-3 whitespace-nowrap">
+          {row.status === 'done' ? (
+            <ShippingBadge type={shippingType} />
+          ) : row.status === 'loading' || row.status === 'pending' ? (
+            <div className="h-5 w-14 rounded-full bg-slate-800 shimmer" />
           ) : <span className="text-slate-600 text-xs">—</span>}
         </td>
 
@@ -632,12 +633,28 @@ function ResultRow({
       {/* Expanded row */}
       {isExpanded && row.status === 'done' && row.result && (
         <tr className="border-b border-slate-800/40">
-          <td colSpan={8} className="px-6 py-4 bg-slate-950/40">
+          <td colSpan={9} className="px-6 py-4 bg-slate-950/40">
             <ExpandedDetails result={row.result} />
           </td>
         </tr>
       )}
     </>
+  );
+}
+
+// ── Shipping Badge ────────────────────────────────────────────────────────────
+
+function ShippingBadge({ type }: { type: string }) {
+  const config: Record<string, { label: string; color: string }> = {
+    prime: { label: 'Prime', color: 'text-blue-400 bg-blue-500/10 border-blue-500/25' },
+    free: { label: 'Free', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25' },
+    paid: { label: 'Paid', color: 'text-slate-400 bg-slate-700/30 border-slate-600/30' },
+  };
+  const c = config[type] ?? config.paid;
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${c.color}`}>
+      {c.label}
+    </span>
   );
 }
 
