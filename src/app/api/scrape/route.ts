@@ -8,6 +8,7 @@ export const maxDuration = 180;
 
 interface ScrapeRequestBody {
   asin: string;
+  pincode?: string;
 }
 
 interface ScrapeData {
@@ -38,6 +39,7 @@ interface ScrapeData {
 
 interface ScrapeResult {
   asin: string;
+  pincode: string;
   url: string;
   scrapedAt: string;
   duration: number;
@@ -66,17 +68,11 @@ const PRODUCT_READY_SELECTORS = [
 
 class ScraperError extends Error {
   code:
-    | 'BLOCKED_BY_AMAZON'
-    | 'CAPTCHA_DETECTED'
-    | 'SCRAPE_TIMEOUT'
-    | 'SCRAPE_FAILED';
+    | 'BLOCKED_BY_AMAZON' |'CAPTCHA_DETECTED' |'SCRAPE_TIMEOUT' |'SCRAPE_FAILED';
 
   constructor(
     code:
-      | 'BLOCKED_BY_AMAZON'
-      | 'CAPTCHA_DETECTED'
-      | 'SCRAPE_TIMEOUT'
-      | 'SCRAPE_FAILED',
+      | 'BLOCKED_BY_AMAZON' |'CAPTCHA_DETECTED' |'SCRAPE_TIMEOUT' |'SCRAPE_FAILED',
     message: string
   ) {
     super(message);
@@ -650,7 +646,60 @@ async function extractProductData(page: PlaywrightPage): Promise<ScrapeData> {
   };
 }
 
-async function runScraper(asin: string, attempt = 1): Promise<ScrapeResult> {
+async function setPincodeOnPage(page: PlaywrightPage, pincode: string): Promise<void> {
+  try {
+    // Try to find and click the delivery location link
+    const locationLink = await firstVisible(page, [
+      '#nav-global-location-popover-link',
+      '#glow-ingress-line2',
+      '[data-action="a-modal-trigger"]',
+    ]);
+    if (!locationLink) return;
+
+    await locationLink.click({ delay: 80 });
+    await humanDelay(800, 1400);
+
+    // Find pincode input
+    const pincodeInput = await firstVisible(page, [
+      'input[data-action="GLUXPostalInputAction"]',
+      '#GLUXZipUpdateInput',
+      'input[placeholder*="PIN" i]',
+      'input[placeholder*="pincode" i]',
+      'input[placeholder*="zip" i]',
+    ]);
+    if (!pincodeInput) return;
+
+    await pincodeInput.fill('');
+    await humanDelay(200, 400);
+    await pincodeInput.type(pincode, { delay: 80 });
+    await humanDelay(400, 700);
+
+    // Submit
+    const applyBtn = await firstVisible(page, [
+      '#GLUXZipUpdate',
+      'input[data-action="GLUXPostalInputAction"]',
+      'span.a-button-text',
+    ]);
+    if (applyBtn) {
+      await applyBtn.click({ delay: 60 });
+      await humanDelay(1000, 1800);
+    }
+
+    // Close modal if still open
+    const closeBtn = await firstVisible(page, [
+      'button.a-popover-close',
+      '.a-popover-footer .a-button-primary',
+    ]);
+    if (closeBtn) {
+      await closeBtn.click({ delay: 60 });
+      await humanDelay(500, 900);
+    }
+  } catch {
+    // Pincode setting is best-effort; continue without it
+  }
+}
+
+async function runScraper(asin: string, pincode: string, attempt = 1): Promise<ScrapeResult> {
   const url = `https://www.amazon.in/dp/${asin}`;
   const startTime = Date.now();
 
@@ -671,10 +720,24 @@ async function runScraper(asin: string, attempt = 1): Promise<ScrapeResult> {
     await ensureAmazonAccessible(page, 'product', url);
     await ensurePageReady(page);
 
+    // Set pincode if provided
+    if (pincode && /^\d{6}$/.test(pincode)) {
+      await setPincodeOnPage(page, pincode);
+      // Re-navigate to product page after pincode change to get updated delivery info
+      await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30_000,
+        referer: 'https://www.amazon.in/',
+      });
+      await humanDelay(1000, 1800);
+      await ensurePageReady(page);
+    }
+
     const data = await extractProductData(page);
 
     return {
       asin,
+      pincode,
       url,
       scrapedAt: new Date().toISOString(),
       duration: Date.now() - startTime,
@@ -742,6 +805,8 @@ export async function POST(req: NextRequest) {
   }
 
   const asin = body.asin?.trim().toUpperCase();
+  const pincode = body.pincode?.trim() ?? '';
+
   if (!asin) {
     return NextResponse.json({ error: 'asin is required' }, { status: 400 });
   }
@@ -760,7 +825,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const firstAttempt = await withTimeout(
-      runScraper(asin, 1),
+      runScraper(asin, pincode, 1),
       requestTimeoutMs,
       `Scrape timed out after ${Math.round(requestTimeoutMs / 1000)} seconds`
     );
@@ -779,7 +844,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const secondAttempt = await withTimeout(
-        runScraper(asin, 2),
+        runScraper(asin, pincode, 2),
         requestTimeoutMs,
         `Scrape timed out after ${Math.round(requestTimeoutMs / 1000)} seconds`
       );
