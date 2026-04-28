@@ -1,0 +1,5 @@
+2026/04/28-22:49:14.314 328088 Reusing MANIFEST /Users/avtrix/Projects/Scrapper/amazonscraper/.playwright/amazon-profile/Default/Local Storage/leveldb/MANIFEST-000001
+2026/04/28-22:49:14.319 328088 Recovering log #4
+2026/04/28-22:49:14.320 328088 Reusing old log /Users/avtrix/Projects/Scrapper/amazonscraper/.playwright/amazon-profile/Default/Local Storage/leveldb/000004.log 
+2026/04/28-22:49:34.842 32808b Level-0 table #8: started
+2026/04/28-22:49:34.856 32808b Level-0 table #8: 100268 bytes OK
