@@ -48,9 +48,9 @@ interface ScrapeResult {
   error?: string;
 }
 
-type PlaywrightPage = import('playwright').Page;
-type PlaywrightBrowserContext = import('playwright').BrowserContext;
-type PlaywrightLocator = import('playwright').Locator;
+type PlaywrightPage = import('playwright-core').Page;
+type PlaywrightBrowserContext = import('playwright-core').BrowserContext;
+type PlaywrightLocator = import('playwright-core').Locator;
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -292,10 +292,22 @@ async function launchBrowser(): Promise<{
     };
   }
 
-  const { chromium } = await import('playwright');
+  const { chromium } = await import('playwright-core');
   const headless = process.env.PLAYWRIGHT_HEADLESS !== 'false';
   const usePersistentContext = envFlag('AMAZON_PERSISTENT_SESSION', !headless);
   const browserChannel = process.env.AMAZON_BROWSER_CHANNEL;
+
+  // Resolve executablePath: use @sparticuz/chromium in serverless/hosted environments
+  let executablePath: string | undefined;
+  try {
+    const sparticuzChromium = await import('@sparticuz/chromium');
+    const chromiumModule = sparticuzChromium.default || sparticuzChromium;
+    executablePath = await chromiumModule.executablePath();
+  } catch {
+    // Fall back to system/local chromium if @sparticuz/chromium is unavailable
+    executablePath = undefined;
+  }
+
   const contextOptions = {
     viewport: { width: 1440, height: 900 },
     locale: 'en-IN',
@@ -309,6 +321,7 @@ async function launchBrowser(): Promise<{
     headless,
     slowMo: headless ? 0 : 120,
     channel: browserChannel || undefined,
+    executablePath: executablePath || undefined,
     args: [
       '--disable-blink-features=AutomationControlled',
       '--disable-dev-shm-usage',
@@ -317,11 +330,13 @@ async function launchBrowser(): Promise<{
       '--lang=en-IN',
       '--no-first-run',
       '--no-default-browser-check',
+      '--no-sandbox',
+      '--single-process',
     ],
   };
 
   let context: PlaywrightBrowserContext;
-  let browser: import('playwright').Browser | undefined;
+  let browser: import('playwright-core').Browser | undefined;
   let close: () => Promise<void>;
 
   if (usePersistentContext) {
