@@ -80,3 +80,6 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 - If builds fail, check the Playwright installation logs
 - For scraping timeouts, increase `AMAZON_REQUEST_TIMEOUT_MS`
 - Monitor your deployment logs for Amazon blocking messages
+- **Playwright not found**: Make sure you're using `npx playwright` in build scripts
+- **Memory issues**: Scraping can use significant memory; consider upgrading your plan
+- **Rate limiting**: Amazon may temporarily block requests; implement delays between scrapes
