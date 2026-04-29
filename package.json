@@ -41,6 +41,7 @@
   "scripts": {
     "dev": "next dev -p 4028",
     "prebuild": "npm install --include=dev",
+    "postinstall": "PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install --with-deps chromium",
     "build": "next build",
     "start": "next start -p ${PORT:-4028}",
     "lint": "next lint",
@@ -48,7 +49,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
     "serve": "next start -p ${PORT:-4028}",
     "type-check": "tsc --noEmit",
-    "playwright:install": "npx playwright install chromium",
+    "playwright:install": "PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install --with-deps chromium",
     "render:build": "PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install --with-deps chromium && npm run build"
   },
   "engines": {
