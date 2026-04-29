@@ -40,8 +40,8 @@
   },
   "scripts": {
     "dev": "next dev -p 4028",
-    "build": "npx playwright install chromium && npx next build",
-    "start": "next start -p 4028",
+    "build": "next build",
+    "start": "next start -p ${PORT:-4028}",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
