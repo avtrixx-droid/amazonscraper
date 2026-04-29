@@ -300,7 +300,8 @@ async function launchBrowser(): Promise<{
   // Resolve executablePath: use @sparticuz/chromium in serverless/hosted environments
   let executablePath: string | undefined;
   try {
-    const sparticuzChromium = await import('@sparticuz/chromium');
+    const sparticuzModuleName = '@sparticuz/chromium';
+    const sparticuzChromium = await import(sparticuzModuleName);
     const chromiumModule = sparticuzChromium.default || sparticuzChromium;
     executablePath = await chromiumModule.executablePath();
   } catch {
