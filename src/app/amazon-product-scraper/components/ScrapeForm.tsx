@@ -76,8 +76,7 @@ export default function ScrapeForm({ onScrape, isRunning }: ScrapeFormProps) {
               spellCheck={false}
               className={`w-full bg-slate-800/60 border rounded-lg px-3 py-2.5 text-sm font-mono text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-2 transition-all duration-150 pr-10 ${
                 errors.asin
-                  ? 'border-red-500/60 focus:ring-red-500/20'
-                  : 'border-slate-700/60 focus:ring-orange-500/20 focus:border-orange-500/50'
+                  ? 'border-red-500/60 focus:ring-red-500/20' :'border-slate-700/60 focus:ring-orange-500/20 focus:border-orange-500/50'
               }`}
               {...register('asin', {
                 required: 'ASIN is required',
@@ -117,8 +116,7 @@ export default function ScrapeForm({ onScrape, isRunning }: ScrapeFormProps) {
                 onClick={() => setValue('asin', item.asin, { shouldValidate: true })}
                 className={`px-2 py-0.5 rounded text-[11px] font-mono transition-all duration-150 border ${
                   asinValue.toUpperCase() === item.asin
-                    ? 'bg-orange-500/20 text-orange-400 border-orange-500/40'
-                    : 'bg-slate-800/40 text-slate-500 border-slate-700/40 hover:text-slate-300 hover:border-slate-600/60'
+                    ? 'bg-orange-500/20 text-orange-400 border-orange-500/40' :'bg-slate-800/40 text-slate-500 border-slate-700/40 hover:text-slate-300 hover:border-slate-600/60'
                 }`}
               >
                 {item.asin}
@@ -160,8 +158,7 @@ export default function ScrapeForm({ onScrape, isRunning }: ScrapeFormProps) {
           disabled={isRunning}
           className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 active:scale-[0.98] ${
             isRunning
-              ? 'bg-slate-700/60 text-slate-500 cursor-not-allowed border border-slate-700/40'
-              : 'bg-orange-500 hover:bg-orange-400 text-white border border-orange-400/30 shadow-lg shadow-orange-500/20'
+              ? 'bg-slate-700/60 text-slate-500 cursor-not-allowed border border-slate-700/40' :'bg-orange-500 hover:bg-orange-400 text-white border border-orange-400/30 shadow-lg shadow-orange-500/20'
           }`}
         >
           {isRunning ? (
