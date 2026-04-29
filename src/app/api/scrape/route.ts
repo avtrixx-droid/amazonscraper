@@ -48,9 +48,9 @@ interface ScrapeResult {
   error?: string;
 }
 
-type PlaywrightPage = import('playwright-core').Page;
-type PlaywrightBrowserContext = import('playwright-core').BrowserContext;
-type PlaywrightLocator = import('playwright-core').Locator;
+type PlaywrightPage = import('playwright').Page;
+type PlaywrightBrowserContext = import('playwright').BrowserContext;
+type PlaywrightLocator = import('playwright').Locator;
 
 const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -292,22 +292,10 @@ async function launchBrowser(): Promise<{
     };
   }
 
-  const { chromium } = await import('playwright-core');
+  const { chromium } = await import('playwright');
   const headless = process.env.PLAYWRIGHT_HEADLESS !== 'false';
   const usePersistentContext = envFlag('AMAZON_PERSISTENT_SESSION', !headless);
   const browserChannel = process.env.AMAZON_BROWSER_CHANNEL;
-
-  // Resolve executablePath: use @sparticuz/chromium in serverless/hosted environments
-  let executablePath: string | undefined;
-  try {
-    const sparticuzModuleName = '@sparticuz/chromium';
-    const sparticuzChromium = await import(sparticuzModuleName);
-    const chromiumModule = sparticuzChromium.default || sparticuzChromium;
-    executablePath = await chromiumModule.executablePath();
-  } catch {
-    // Fall back to system/local chromium if @sparticuz/chromium is unavailable
-    executablePath = undefined;
-  }
 
   const contextOptions = {
     viewport: { width: 1440, height: 900 },
@@ -322,7 +310,6 @@ async function launchBrowser(): Promise<{
     headless,
     slowMo: headless ? 0 : 120,
     channel: browserChannel || undefined,
-    executablePath: executablePath || undefined,
     args: [
       '--disable-blink-features=AutomationControlled',
       '--disable-dev-shm-usage',
@@ -331,13 +318,11 @@ async function launchBrowser(): Promise<{
       '--lang=en-IN',
       '--no-first-run',
       '--no-default-browser-check',
-      '--no-sandbox',
-      '--single-process',
     ],
   };
 
   let context: PlaywrightBrowserContext;
-  let browser: import('playwright-core').Browser | undefined;
+  let browser: import('playwright').Browser | undefined;
   let close: () => Promise<void>;
 
   if (usePersistentContext) {
@@ -379,7 +364,7 @@ async function launchBrowser(): Promise<{
     Object.defineProperty(window, 'chrome', { value: { runtime: {} } });
   });
 
-  return { context, close };
+  return { context, close, reused: false };
 }
 
 async function warmupAmazonSession(page: PlaywrightPage): Promise<void> {
@@ -589,8 +574,12 @@ async function extractProductData(page: PlaywrightPage): Promise<ScrapeData> {
   const reviewCountMatch = payload.reviewCountText?.match(/([\d,]+)/);
   const reviewCount = reviewCountMatch ? reviewCountMatch[1] : payload.reviewCountText;
 
-  const images = payload.images ?? [];
-  const categories = payload.categories ?? [];
+  const compactStrings = (values: Array<string | null | undefined> | undefined) =>
+    (values ?? []).filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+  const images = compactStrings(payload.images);
+  const categories = compactStrings(payload.categories);
+  const bulletPoints = compactStrings(payload.bulletPoints);
   const priceRaw = extractNumber(payload.price);
   const listPriceRaw = extractNumber(payload.listPrice);
   const discountPercent =
@@ -645,10 +634,10 @@ async function extractProductData(page: PlaywrightPage): Promise<ScrapeData> {
     primeAvailable: payload.primeAvailable,
     brand: cleanText(payload.brand),
     category: cleanText(category),
-    categories: payload.categories,
+    categories,
     images,
     imageCount: images.length,
-    bulletPoints: payload.bulletPoints,
+    bulletPoints,
     productDescription: cleanText(payload.productDescription),
     aPlusContent: payload.aPlusContent,
     availability: cleanText(payload.availabilityText),

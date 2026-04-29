@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { HistoryEntry, ScrapeStatus } from './ScraperPanel';
 import { Play, RotateCcw, Clock, TrendingUp } from 'lucide-react';
 import {
   BarChart,
@@ -19,8 +18,19 @@ interface ScrapeHistoryProps {
   isRunning: boolean;
 }
 
+interface HistoryEntry {
+  id: string;
+  asin: string;
+  pincode?: string;
+  status: 'idle' | 'queued' | 'scraping' | 'retrying' | 'complete' | 'failed';
+  duration: number;
+  retried: boolean;
+  scrapedAt: string;
+  price: string | null;
+}
+
 const STATUS_CONFIG: Record<
-  ScrapeStatus,
+  HistoryEntry['status'],
   { label: string; color: string; bg: string; border: string }
 > = {
   idle: {

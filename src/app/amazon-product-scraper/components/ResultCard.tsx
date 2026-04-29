@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ScrapeResult } from './ScraperPanel';
+import type { ScrapeResult } from './ScraperPanel';
 import { ExternalLink, RotateCcw, MessageSquare, Truck, Package, Tag, Store } from 'lucide-react';
 
 interface ResultCardProps {

@@ -21,26 +21,9 @@ const nextConfig = {
   productionBrowserSourceMaps: true,
   distDir: process.env.DIST_DIR || '.next',
 
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-
   images: {
     remotePatterns: imageHosts,
     minimumCacheTTL: 60,
-  },
-
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      // @sparticuz/chromium relies on relative path resolution to find its binary files.
-      // Bundling it breaks that resolution, so we mark it as external.
-      config.externals = [
-        ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
-        '@sparticuz/chromium',
-        'playwright-core',
-      ];
-    }
-    return config;
   },
 };
 

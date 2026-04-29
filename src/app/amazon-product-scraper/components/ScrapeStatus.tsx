@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { ScrapeStatus as StatusType } from './ScraperPanel';
+
+type StatusType = 'idle' | 'queued' | 'scraping' | 'retrying' | 'complete' | 'failed';
 
 interface ScrapeStatusProps {
   status: StatusType;

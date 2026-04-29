@@ -745,30 +745,3 @@ function ExpandedDetails({ result }: { result: ScrapeResult }) {
     </div>
   );
 }
-
-const HistoryEntry: React.FC = () => {
-  React.useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.warn('Placeholder: HistoryEntry is not implemented yet.');
-  }, []);
-  return (
-    <div>
-      {/* HistoryEntry placeholder */}
-    </div>
-  );
-};
-
-export { HistoryEntry };
-const ScrapeStatus: React.FC = () => {
-  React.useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.warn('Placeholder: ScrapeStatus is not implemented yet.');
-  }, []);
-  return (
-    <div>
-      {/* ScrapeStatus placeholder */}
-    </div>
-  );
-};
-
-export { ScrapeStatus };

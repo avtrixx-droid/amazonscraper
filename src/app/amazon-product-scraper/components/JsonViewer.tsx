@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { ScrapeResult } from './ScraperPanel';
+import type { ScrapeResult } from './ScraperPanel';
 import { Copy, Check, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
