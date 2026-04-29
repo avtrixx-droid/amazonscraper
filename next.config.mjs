@@ -1,5 +1,5 @@
 import { createRequire } from 'module';
-import { dirname } from 'path';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { imageHosts } from './image-hosts.config.mjs';
 
@@ -24,6 +24,13 @@ const nextConfig = {
   images: {
     remotePatterns: imageHosts,
     minimumCacheTTL: 60,
+  },
+
+  webpack(config) {
+    config.resolve ||= {};
+    config.resolve.alias ||= {};
+    config.resolve.alias['@'] = resolve(__dirname, 'src');
+    return config;
   },
 };
 
